@@ -1,17 +1,148 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-    <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css">
-    <title>نظام إدارة شبكة العلاقات</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نظام إدارة شبكة العلاقات</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+/* ===== RESET & BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d1a;--surface:#141428;--surface2:#1a1a35;--border:#252545;
+  --gold:#C9A84C;--gold2:#f0d080;--text:#e0e0f0;--text2:#9090b0;
+  --green:#1D9E75;--red:#E24B4A;--blue:#3B8BD4;--purple:#7F77DD;
+  --radius:10px;--shadow:0 4px 20px rgba(0,0,0,.4);
+}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl}
+a{color:var(--gold);text-decoration:none}
 
+/* ===== LAYOUT ===== */
+#app{display:flex;height:100vh;overflow:hidden}
+#nav{width:220px;min-width:220px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column}
+#main{flex:1;overflow-y:auto;background:var(--bg)}
 
-    </head>
-    <body>
-        <div id="app">
+/* ===== NAV ===== */
+#nav-header{padding:20px 16px;border-bottom:1px solid var(--border)}
+#nav-header h1{font-size:14px;color:var(--gold);font-weight:700;margin-bottom:3px}
+#nav-header p{font-size:10px;color:var(--text2)}
+#nav-menu{padding:12px 0;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border-right:3px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--surface2);color:var(--gold);border-right-color:var(--gold);font-weight:700}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+#nav-stats{padding:12px 16px;border-top:1px solid var(--border)}
+.nstat{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
+.nstat .lbl{color:var(--text2)}.nstat .val{color:var(--gold);font-weight:700}
+
+/* ===== PAGE HEADER ===== */
+.page-header{padding:24px 28px 0;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.page-header h2{font-size:20px;font-weight:700;color:var(--text)}
+.page-header h2 span{color:var(--gold)}
+
+/* ===== CARDS ===== */
+.cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:0 28px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;border-top:3px solid}
+.stat-card .num{font-size:32px;font-weight:700;margin-bottom:4px}
+.stat-card .lbl{font-size:12px;color:var(--text2)}
+.stat-card.gold{border-top-color:var(--gold)}.stat-card.gold .num{color:var(--gold)}
+.stat-card.green{border-top-color:var(--green)}.stat-card.green .num{color:var(--green)}
+.stat-card.blue{border-top-color:var(--blue)}.stat-card.blue .num{color:var(--blue)}
+.stat-card.purple{border-top-color:var(--purple)}.stat-card.purple .num{color:var(--purple)}
+
+/* ===== TABLE SECTION ===== */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin:0 28px 20px;overflow:hidden}
+.section-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.section-header h3{font-size:14px;font-weight:700;color:var(--text)}
+.search-bar{padding:7px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;direction:rtl;min-width:200px}
+.search-bar:focus{outline:none;border-color:var(--gold)}
+.btn{padding:7px 14px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;font-family:Arial;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-gold{background:var(--gold);color:#0d0d1a}
+.btn-gold:hover{background:var(--gold2)}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff;padding:5px 10px;font-size:11px}
+.btn-blue{background:var(--blue);color:#fff;padding:5px 10px;font-size:11px}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ===== DATA TABLE ===== */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{padding:10px 14px;text-align:right;font-size:11px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
+.data-table td{padding:10px 14px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--surface2)}
+.data-table .actions{display:flex;gap:5px;justify-content:flex-end}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700}
+.badge-gold{background:#C9A84C22;color:var(--gold);border:1px solid #C9A84C44}
+.badge-green{background:#1D9E7522;color:var(--green);border:1px solid #1D9E7544}
+.badge-blue{background:#3B8BD422;color:var(--blue);border:1px solid #3B8BD444}
+.badge-red{background:#E24B4A22;color:var(--red);border:1px solid #E24B4A44}
+.badge-purple{background:#7F77DD22;color:var(--purple);border:1px solid #7F77DD44}
+
+/* ===== MODAL ===== */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center}
+#modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:500px;max-width:95vw;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow)}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-header h3{font-size:15px;font-weight:700;color:var(--gold)}
+.modal-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;line-height:1}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface)}
+
+/* ===== FORM ===== */
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:11px;color:var(--text2);margin-bottom:5px;font-weight:600}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;direction:rtl;font-family:Arial}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--gold)}
+.form-row textarea{resize:vertical;min-height:70px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row select option{background:#1a1a35;color:#e0e0f0}
+
+/* ===== TOAST ===== */
+#toast{position:fixed;bottom:24px;left:24px;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;display:none;animation:slideUp .3s ease}
+#toast.ok{background:#0a2a1a;color:var(--green);border:1px solid var(--green)}
+#toast.err{background:#2a0a0a;color:var(--red);border:1px solid var(--red)}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ===== NETWORK MAP ===== */
+#network-container{padding:0 28px 20px;height:calc(100vh - 160px)}
+#network-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);height:100%;position:relative;overflow:hidden}
+#network-svg{width:100%;height:100%}
+#net-controls{position:absolute;top:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap}
+.net-btn{padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-size:11px;font-family:Arial}
+.net-btn:hover{border-color:var(--gold);color:var(--gold)}
+#net-legend{position:absolute;bottom:12px;right:12px;background:rgba(20,20,40,.9);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:10px}
+#net-legend h4{color:var(--gold);margin-bottom:6px;font-size:11px}
+.leg-item{display:flex;align-items:center;gap:6px;margin-bottom:3px;color:var(--text2)}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.leg-line{width:20px;height:2px;flex-shrink:0}
+#net-info{position:absolute;top:12px;left:12px;background:rgba(20,20,40,.95);border:1px solid var(--gold);border-radius:8px;padding:12px;font-size:11px;min-width:180px;display:none}
+#net-info h4{color:var(--gold);margin-bottom:8px;font-size:12px}
+.ni-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.ni-label{color:var(--text2)}.ni-val{color:var(--text)}
+.ni-rels{margin-top:6px;border-top:1px solid var(--border);padding-top:6px}
+.ni-rel-item{padding:3px 0;color:var(--text2);font-size:10px}
+
+/* ===== LOADING ===== */
+.loading{text-align:center;padding:40px;color:var(--text2);font-size:13px}
+.empty{text-align:center;padding:40px;color:var(--text2)}
+.empty .icon{font-size:40px;margin-bottom:10px}
+
+/* ===== DETAIL PANEL ===== */
+.detail-relations{margin-top:16px}
+.detail-rel-item{padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.detail-rel-name{font-size:13px;color:var(--text);font-weight:600}
+.detail-rel-role{font-size:11px;color:var(--text2);margin-top:2px}
+.pct-badge{font-size:12px;font-weight:700;color:var(--gold)}
+
+/* ===== PAGINATION ===== */
+.pagination{display:flex;justify-content:center;gap:6px;padding:14px}
+.pag-btn{padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-size:12px}
+.pag-btn.active{background:var(--gold);color:#0d0d1a;border-color:var(--gold);font-weight:700}
+</style>
+</head>
+<body>
+<div id="app">
 
         <!-- ===== NAV ===== -->
         <div id="nav">
@@ -145,6 +276,7 @@
             <div style="display:flex;gap:8px">
                 <input class="search-bar" placeholder="ابحث في الخريطة..." oninput="searchNetwork(this.value)" style="min-width:180px">
                 <button class="btn btn-ghost" onclick="loadNetwork()">🔄 تحديث</button>
+                <button class="btn btn-gold" onclick="exportNetwork()">📤 تصدير HTML</button>
             </div>
             </div>
             <div id="network-container">
