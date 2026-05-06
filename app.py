@@ -14,14 +14,18 @@ CORS(app , resources={
 
 DB_CONFIG = {
     'host': '127.0.0.1',
-    'user': 'appuser',
-    'password': 'StrongPass123',
+    'user': 'root',
+    'port': 3307 ,
+    'password': '',
     'database': 'syria_network',
     'charset': 'utf8mb4'
 }
 
-def get_db_connection():
-    return mysql.connector.connect(**DB_CONFIG)
+def get_db_connection(database=True):
+    config = {**DB_CONFIG}
+    if not database:
+        config.pop('database')
+    return mysql.connector.connect(**config)
 
 # ============================================================
 # 🗄️  إنشاء الجداول تلقائياً

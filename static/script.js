@@ -1,4 +1,4 @@
-const API = 'http://192.168.2.127/api';
+const API = 'http://localhost:5000/api';
 let currentPage = 'dashboard';
 let modalType = null, modalId = null;
 let allPersons = [], allCompanies = [], allRelations = [];
@@ -350,18 +350,29 @@ async function renderRelationForm(d={}){
     allCompanies.length?Promise.resolve(allCompanies):api('/companies')
   ]);
   allPersons=persons; allCompanies=companies;
+  
   document.getElementById('modal-body').innerHTML=`
   <div class="form-row"><label>الشخص *</label>
-    <select id="f-person">
-      <option value="">— اختر شخص —</option>
-      ${persons.map(p=>`<option value="${p.id}"${d.person_id==p.id?' selected':''}>${p.name}</option>`).join('')}
-    </select>
+    <div style="position:relative">
+      <input id="f-person-search" placeholder="🔍 ابحث عن شخص..." 
+        autocomplete="off"
+        style="width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;direction:rtl;font-family:Arial"
+        oninput="filterDropdown('person',this.value)">
+      <div id="f-person-dropdown" style="display:none;position:absolute;top:100%;right:0;left:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100"></div>
+      <input type="hidden" id="f-person" value="${d.person_id||''}">
+      <div id="f-person-selected" style="font-size:11px;color:var(--gold);margin-top:4px">${d.person_id?persons.find(p=>p.id==d.person_id)?.name||'':'لم يتم الاختيار'}</div>
+    </div>
   </div>
   <div class="form-row"><label>الشركة *</label>
-    <select id="f-company">
-      <option value="">— اختر شركة —</option>
-      ${companies.map(c=>`<option value="${c.id}"${d.company_id==c.id?' selected':''}>${c.name}</option>`).join('')}
-    </select>
+    <div style="position:relative">
+      <input id="f-company-search" placeholder="🔍 ابحث عن شركة..."
+        autocomplete="off"
+        style="width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;direction:rtl;font-family:Arial"
+        oninput="filterDropdown('company',this.value)">
+      <div id="f-company-dropdown" style="display:none;position:absolute;top:100%;right:0;left:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:180px;overflow-y:auto;z-index:100"></div>
+      <input type="hidden" id="f-company" value="${d.company_id||''}">
+      <div id="f-company-selected" style="font-size:11px;color:var(--gold);margin-top:4px">${d.company_id?companies.find(c=>c.id==d.company_id)?.name||'':'لم يتم الاختيار'}</div>
+    </div>
   </div>
   <div class="form-row"><label>الدور *</label>
     <select id="f-role">
@@ -370,11 +381,65 @@ async function renderRelationForm(d={}){
     </select>
   </div>
   <div class="form-grid">
-    <div class="form-row"><label>النسبة % </label><input id="f-pct" type="number" step="0.01" min="0" max="100" value="${d.percentage||''}"></div>
+    <div class="form-row"><label>النسبة %</label><input id="f-pct" type="number" step="0.01" min="0" max="100" value="${d.percentage||''}"></div>
     <div class="form-row"><label>الحصص</label><input id="f-shares" value="${d.shares||''}"></div>
   </div>
   <div class="form-row"><label>القيمة (ل.س)</label><input id="f-value" type="number" value="${d.value_ls||''}"></div>
   <div class="form-row"><label>ملاحظات</label><textarea id="f-notes">${d.notes||''}</textarea></div>`;
+
+  // إغلاق الـ dropdown عند الضغط خارجه
+document.addEventListener('mousedown', function closeDropdowns(e){
+    const inPerson = e.target.closest('#f-person-dropdown') || e.target.id==='f-person-search';
+    const inCompany = e.target.closest('#f-company-dropdown') || e.target.id==='f-company-search';
+    if(!inPerson){
+      const d = document.getElementById('f-person-dropdown');
+      if(d) d.style.display='none';
+    }
+    if(!inCompany){
+      const d = document.getElementById('f-company-dropdown');
+      if(d) d.style.display='none';
+    }
+    if(!inPerson && !inCompany){
+      document.removeEventListener('mousedown', closeDropdowns);
+    }
+  });
+}
+
+function filterDropdown(type, value){
+  const dropdown = document.getElementById(`f-${type}-dropdown`);
+  const data = type==='person' ? allPersons : allCompanies;
+  const labelKey = type==='person' ? 'name' : 'name';
+  
+  if(!value.trim()){
+    dropdown.style.display='none';
+    return;
+  }
+  
+  const filtered = data.filter(item => item.name.includes(value));
+  
+  if(!filtered.length){
+    dropdown.innerHTML=`<div style="padding:10px 14px;color:var(--text2);font-size:12px">لا توجد نتائج</div>`;
+    dropdown.style.display='block';
+    return;
+  }
+  
+  dropdown.innerHTML = filtered.slice(0,8).map(item=>`
+    <div onclick="selectDropdownItem('${type}',${item.id},'${item.name.replace(/'/g,"\\'")}',event)"
+      style="padding:9px 14px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)"
+      onmouseover="this.style.background='var(--surface)'" 
+      onmouseout="this.style.background=''">${item.name}
+      ${type==='person'&&item.nationality?`<small style="color:var(--text2)"> — ${item.nationality}</small>`:''}
+      ${type==='company'&&item.sector?`<small style="color:var(--text2)"> — ${item.sector}</small>`:''}
+    </div>`).join('');
+  dropdown.style.display='block';
+}
+
+function selectDropdownItem(type, id, name, event){
+  event.stopPropagation();
+  document.getElementById(`f-${type}`).value = id;
+  document.getElementById(`f-${type}-search`).value = name;
+  document.getElementById(`f-${type}-selected`).textContent = '✅ '+name;
+  document.getElementById(`f-${type}-dropdown`).style.display='none';
 }
 async function saveRelationForm(){
   const body={
