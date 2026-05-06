@@ -4,29 +4,30 @@ import mysql.connector
 import os
 
 app = Flask(__name__, static_folder='static')
-CORS(app)
+CORS(app , resources={
+        r"/*": {"origins": "*"}
+    })
 
 # ============================================================
-# ⚙️  إعدادات قاعدة البيانات — عدّلها حسب إعداداتك
+# ⚙️        إعدادات قاعدة البيانات
 # ============================================================
+
 DB_CONFIG = {
-    'host':     '127.0.0.1',
-    'port':     3307,
-    'user':     'root',
-    'password': '',
+    'host': '127.0.0.1',
+    'user': 'appuser',
+    'password': 'StrongPass123',
     'database': 'syria_network',
-    'charset':  'utf8mb4',
-    'use_pure': True
+    'charset': 'utf8mb4'
 }
 
-def get_db():
+def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
 # ============================================================
 # 🗄️  إنشاء الجداول تلقائياً
 # ============================================================
 def init_db():
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute("""
@@ -91,7 +92,7 @@ def init_db():
 # ============================================================
 @app.route('/api/persons', methods=['GET'])
 def get_persons():
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     search = request.args.get('search', '')
     if search:
@@ -113,7 +114,7 @@ def get_persons():
 
 @app.route('/api/persons/<int:pid>', methods=['GET'])
 def get_person(pid):
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     cur.execute("SELECT * FROM persons WHERE id=%s", (pid,))
     person = cur.fetchone()
@@ -134,7 +135,7 @@ def add_person():
     d = request.json
     if not d.get('name'):
         return jsonify({'error': 'الاسم مطلوب'}), 400
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         INSERT INTO persons (name, name_en, nationality, residence, family, field, notes)
@@ -149,7 +150,7 @@ def add_person():
 @app.route('/api/persons/<int:pid>', methods=['PUT'])
 def update_person(pid):
     d = request.json
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         UPDATE persons SET name=%s, name_en=%s, nationality=%s, residence=%s,
@@ -162,7 +163,7 @@ def update_person(pid):
 
 @app.route('/api/persons/<int:pid>', methods=['DELETE'])
 def delete_person(pid):
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("DELETE FROM persons WHERE id=%s", (pid,))
     conn.commit()
@@ -174,7 +175,7 @@ def delete_person(pid):
 # ============================================================
 @app.route('/api/companies', methods=['GET'])
 def get_companies():
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     search = request.args.get('search', '')
     if search:
@@ -196,7 +197,7 @@ def get_companies():
 
 @app.route('/api/companies/<int:cid>', methods=['GET'])
 def get_company(cid):
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     cur.execute("SELECT * FROM companies WHERE id=%s", (cid,))
     company = cur.fetchone()
@@ -217,7 +218,7 @@ def add_company():
     d = request.json
     if not d.get('name'):
         return jsonify({'error': 'اسم الشركة مطلوب'}), 400
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         INSERT INTO companies (name, name_en, type, sector, city, country, capital, reg_number, founded, status, notes)
@@ -234,7 +235,7 @@ def add_company():
 @app.route('/api/companies/<int:cid>', methods=['PUT'])
 def update_company(cid):
     d = request.json
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         UPDATE companies SET name=%s, name_en=%s, type=%s, sector=%s, city=%s,
@@ -249,7 +250,7 @@ def update_company(cid):
 
 @app.route('/api/companies/<int:cid>', methods=['DELETE'])
 def delete_company(cid):
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("DELETE FROM companies WHERE id=%s", (cid,))
     conn.commit()
@@ -261,7 +262,7 @@ def delete_company(cid):
 # ============================================================
 @app.route('/api/relations', methods=['GET'])
 def get_relations():
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     cur.execute("""
         SELECT r.*, p.name as person_name, p.nationality,
@@ -280,7 +281,7 @@ def add_relation():
     d = request.json
     if not d.get('person_id') or not d.get('company_id') or not d.get('role'):
         return jsonify({'error': 'الشخص والشركة والدور مطلوبة'}), 400
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("""
@@ -299,7 +300,7 @@ def add_relation():
 @app.route('/api/relations/<int:rid>', methods=['PUT'])
 def update_relation(rid):
     d = request.json
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         UPDATE relations SET role=%s, shares=%s, percentage=%s, value_ls=%s, notes=%s
@@ -311,7 +312,7 @@ def update_relation(rid):
 
 @app.route('/api/relations/<int:rid>', methods=['DELETE'])
 def delete_relation(rid):
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("DELETE FROM relations WHERE id=%s", (rid,))
     conn.commit()
@@ -323,7 +324,7 @@ def delete_relation(rid):
 # ============================================================
 @app.route('/api/network', methods=['GET'])
 def get_network():
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
 
     cur.execute("""
@@ -376,7 +377,7 @@ def get_network():
 # ============================================================
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    conn = get_db()
+    conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     cur.execute("SELECT COUNT(*) as total FROM persons")
     p = cur.fetchone()['total']
