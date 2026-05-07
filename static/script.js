@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 const API = 'http://192.168.2.127/api';
-=======
-const API = 'http://localhost:5000/api';
->>>>>>> 7c7fab547e8443cdb5d901d216697b6ccbb3f9cc
 let currentPage = 'dashboard';
 let modalType = null, modalId = null;
 let allPersons = [], allCompanies = [], allRelations = [];
@@ -354,20 +350,6 @@ async function renderRelationForm(d={}){
     allCompanies.length?Promise.resolve(allCompanies):api('/companies')
   ]);
   allPersons=persons; allCompanies=companies;
-<<<<<<< HEAD
-  document.getElementById('modal-body').innerHTML=`
-  <div class="form-row"><label>الشخص *</label>
-    <select id="f-person">
-      <option value="">— اختر شخص —</option>
-      ${persons.map(p=>`<option value="${p.id}"${d.person_id==p.id?' selected':''}>${p.name}</option>`).join('')}
-    </select>
-  </div>
-  <div class="form-row"><label>الشركة *</label>
-    <select id="f-company">
-      <option value="">— اختر شركة —</option>
-      ${companies.map(c=>`<option value="${c.id}"${d.company_id==c.id?' selected':''}>${c.name}</option>`).join('')}
-    </select>
-=======
   
   document.getElementById('modal-body').innerHTML=`
   <div class="form-row"><label>الشخص *</label>
@@ -391,7 +373,6 @@ async function renderRelationForm(d={}){
       <input type="hidden" id="f-company" value="${d.company_id||''}">
       <div id="f-company-selected" style="font-size:11px;color:var(--gold);margin-top:4px">${d.company_id?companies.find(c=>c.id==d.company_id)?.name||'':'لم يتم الاختيار'}</div>
     </div>
->>>>>>> 7c7fab547e8443cdb5d901d216697b6ccbb3f9cc
   </div>
   <div class="form-row"><label>الدور *</label>
     <select id="f-role">
@@ -400,17 +381,11 @@ async function renderRelationForm(d={}){
     </select>
   </div>
   <div class="form-grid">
-<<<<<<< HEAD
-    <div class="form-row"><label>النسبة % </label><input id="f-pct" type="number" step="0.01" min="0" max="100" value="${d.percentage||''}"></div>
-=======
     <div class="form-row"><label>النسبة %</label><input id="f-pct" type="number" step="0.01" min="0" max="100" value="${d.percentage||''}"></div>
->>>>>>> 7c7fab547e8443cdb5d901d216697b6ccbb3f9cc
     <div class="form-row"><label>الحصص</label><input id="f-shares" value="${d.shares||''}"></div>
   </div>
   <div class="form-row"><label>القيمة (ل.س)</label><input id="f-value" type="number" value="${d.value_ls||''}"></div>
   <div class="form-row"><label>ملاحظات</label><textarea id="f-notes">${d.notes||''}</textarea></div>`;
-<<<<<<< HEAD
-=======
 
   // إغلاق الـ dropdown عند الضغط خارجه
 document.addEventListener('mousedown', function closeDropdowns(e){
@@ -465,7 +440,6 @@ function selectDropdownItem(type, id, name, event){
   document.getElementById(`f-${type}-search`).value = name;
   document.getElementById(`f-${type}-selected`).textContent = '✅ '+name;
   document.getElementById(`f-${type}-dropdown`).style.display='none';
->>>>>>> 7c7fab547e8443cdb5d901d216697b6ccbb3f9cc
 }
 async function saveRelationForm(){
   const body={
@@ -639,8 +613,6 @@ function netFilter(type){
   else if(type==='top'){netSvg._nodeSel.style('opacity',d=>d.connections>=5?1:0.1);}
 }
 
-<<<<<<< HEAD
-=======
 function exportNetwork() {
   if (!netSvg) { toast('ابني الخريطة أول', 'err'); return; }
 
@@ -851,7 +823,6 @@ function getCurrentLinks(){
   }));
 }
 
->>>>>>> 7c7fab547e8443cdb5d901d216697b6ccbb3f9cc
 // ================================================================
 // INIT
 // ================================================================
